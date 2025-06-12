@@ -1,5 +1,6 @@
 package com.example.bookapp
 
+import android.annotation.SuppressLint
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -17,6 +18,11 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -24,9 +30,21 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
 
+@SuppressLint("DefaultLocale")
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun BookItem(book: Book, viewModel: BookSearchViewModel) {
+    val userRating = viewModel.userRatings[book.title] ?: 0
+    val avgRating = viewModel.ratingsMap[book.title] ?: 0.0
+    LaunchedEffect(book.title) {
+        if (!book.title.isNullOrBlank() && !viewModel.loadedRatingsTitles.contains(book.title)) {
+            viewModel.loadedRatingsTitles.add(book.title)
+            viewModel.loadUserRating(book.title)
+            viewModel.updateAverageRating(book.title)
+        }
+    }
+
+
     Column(
         modifier = Modifier
             .fillMaxWidth()
@@ -64,14 +82,12 @@ fun BookItem(book: Book, viewModel: BookSearchViewModel) {
                     tint = if (isFav) Color.Red else Color.White
                 )
             }
-            IconButton(onClick = {}) {
-                Icon(
-                    imageVector = Icons.Default.Star,
-                    contentDescription = "Dodaj recenzję",
-                    tint = Color.White
-                )
-            }
+//
         }
-
+        RatingBar(
+            currentRating = userRating,
+            onRatingSelected = { viewModel.submitRating(book.title, it) }
+        )
+        Text("Średnia ocena: ${"%.1f".format(avgRating)}", color = Color.Yellow)
     }
 }
